@@ -1,4 +1,4 @@
-#Hanger - V1.0.0
+# Hanger - V1.0.0
 
 This CLI tool helps manage your minecraft servers. Put's them all in 1 spot, and you  can manage them all right from the command line. 
 
