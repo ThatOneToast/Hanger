@@ -27,6 +27,9 @@ local helpMessage = [[
         Stops the specified server.
         Example: execute TestServer -S
 
+        --connect <rcon_port>
+        Connects to the server.
+
         -MR --max-ram <amount>
         Sets the maximum amount of RAM that the server can use.
         Default: 1G
@@ -74,6 +77,10 @@ execute_parser:option("--max-ram", "Set the maximum amount of RAM the server can
 execute_parser:option("--min-ram", "Set the minimum amount of RAM the server can use."):default("1G")
 execute_parser:flag("--no-takeover", "The minecraft server won't take over your terminal, and will run in the background.")
 
+-- Connection
+execute_parser:option("--connect", "The rcon port the server is running on."):default(25575)
+execute_parser:option("--disconnect", "The rcon port the server is running on."):default(25575)
+
 -- Modify the server
 execute_parser:option("--add-plugin", "Add a plugin to the servers plugin folder.")
 execute_parser:option("--remove-plugin", "Remove a plugin from the servers plugin folder.")
@@ -108,19 +115,19 @@ if args.execute then
     -- Check if there is a file called server.properties
     local properties_file = server_dir .. "/server.properties"
     if not lfs.attributes(properties_file) then
-        minecraft_server.create_server_properties(server_dir, "0.0.0.0", 25565, 25575, password, true)
+        minecraft_server.create_properties(server_dir, "0.0.0.0", 25565, 25575, password, true)
     end
 
     if args.start then
         if args.no_takeover then
-            minecraft_server.start_server(server_dir, args.max_ram, args.max_ram, true)
+            minecraft_server.start_server(server_dir, args.min_ram, args.max_ram, true)
         else
             minecraft_server.start_server(server_dir, args.max_ram, args.max_ram, false)
         end
     end
 
     if args.stop then
-        minecraft_server.stop_server(password)
+        minecraft_server.stop_server("localhost", 25565, 25575, password)
     end
 
     if args.add_plugin then
@@ -137,15 +144,15 @@ if args.execute then
 
     if args.say then
         local message = args.say
-        rcon.send_command_packet("locahost", 25575, password, "say " .. message)
+        rcon.send_command_packet("localhost", 25575, password, "say " .. message)
     end
 end
 
 
 if args.create then
-    local server_dir = minecraft_server.create_server_folder(args.serverName)
-    local jar_url = minecraft_server.get_paper_url(args.version)
-    minecraft_server.download_paper_jar(jar_url, server_dir)
+    local server_dir = minecraft_server.create_dir(args.serverName)
+    local jar_url = minecraft_server.get_jar_url(args.version)
+    minecraft_server.download_jar(jar_url, server_dir)
 end
 
 if args.delete then

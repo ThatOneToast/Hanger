@@ -1,17 +1,44 @@
-# Hanger - V1.0.0
+# Hanger CLI
 
-This CLI tool helps manage your minecraft servers. Put's them all in 1 spot, and you  can manage them all right from the command line. <br>
+Hanger CLI is a powerful Lua-based command-line interface for managing Minecraft servers efficiently and effectively. It simplifies server management by allowing you to create, start, stop, and manage multiple Minecraft servers with just a few commands.
 
-Let's create a server.<br>
+## Features
 
-Create a server: `lua HangerCLI.lua create <serverName> <version>` <br>
-Start a server: `lua HangerCLI.lua execute <serverName> --start` -- Will start a server with a max of 1g of ram and a min of 1g.<br>
-Stop a server: `lua HangerCLI.lua execute <serverName> --stop`<br>
-Clear server cache: `lua HangerCLI.lua execute <serverName> --clear-cache` -- Will delete all of server cache folders, and all plugin data in the plugins folder.<br>
-Add a plugin to server: `lua HangerCLI.lua execute <serverName> --add-plugin <plugin>` -- Will move the plugin file to the plugins folder. <br>
-Remove a plugin from server: `lua HangerCLI.lua execute <serverName> --remove-plugin <plugin>` -- Will delete the plugin from the folder.<br>
+- **Create and Delete Servers**: Easily set up new Minecraft servers and remove them when they're no longer needed.
+- **Start and Stop Servers**: Control your Minecraft server's operational status with simple commands.
+- **Manage Server Resources**: Specify the maximum and minimum RAM usage for your servers.
+- **Background Operation**: Run servers in the background, ensuring they don't interfere with terminal usage.
+- **Plugin Management**: Add or remove plugins from your server's plugins folder on the fly.
+- **Server Communication**: Send broadcast messages directly to your server using RCON.
+- **Cache Management**: Clear your server's cache to ensure smooth operations.
 
+## Commands
 
-As of right now executing this CLI requires the installation of Lua and Luarocks + packages. <br>
-In the future when this comes to a more complete tool, I will compile it. <br>
+- `create <serverName> -v <version>`: Creates a new server instance with the specified name and Minecraft version.
+- `delete <serverName>`: Deletes the specified server instance.
+- `execute <serverName>`: Executes specified actions such as starting, stopping, and managing server properties.
 
+### Examples
+
+- **Creating a Server**: `hanger_cli create MyServer -v 1.16.5`
+- **Starting a Server**: `hanger_cli execute MyServer --start --max-ram 2G --min-ram 1G --no-takeover`
+- **Stopping a Server**: `hanger_cli execute MyServer --stop`
+- **Adding a Plugin**: `hanger_cli execute MyServer --add-plugin AwesomePlugin.jar`
+- **Removing a Plugin**: `hanger_cli execute MyServer --remove-plugin AwesomePlugin.jar`
+- **Broadcasting a Message**: `hanger_cli execute MyServer --say "Hello, World!"`
+
+## Current Limitations
+
+- **Single Connection**: Currently, the CLI supports managing only one connection to a server at a time. Efforts are underway to enable support for managing multiple servers concurrently.
+
+## Getting Started
+
+To get started with Hanger CLI, clone this repository to your local machine and ensure you have Lua and required modules installed. Follow the setup instructions to configure your environment.
+
+## Contribution
+
+Contributions are welcome! If you have suggestions or improvements, please fork the repository and submit a pull request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
