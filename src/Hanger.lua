@@ -9,16 +9,20 @@ local service = require("Service/Service")
 local file_manager = data.file_manager
 local minecraft = data.minecraft
 
-local function send_service_instructions(instructions)
-    local function host_ipv4()
-        local udp = socket.udp()
-        udp:setpeername("1.1.1.1", 80)
-        local ip = udp:getsockname()
-        udp:close()
-        return ip
-    end
+local function host_ipv4()
+    local udp = socket.udp()
+    udp:setpeername("1.1.1.1", 80)
+    local ip = udp:getsockname()
+    udp:close()
+    return ip
+end
 
-    local daemon_client, err = socket.connect(host_ipv4(), 5000)
+local dameaon_client = host_ipv4()
+
+
+
+local function send_service_instructions(instructions)
+    local daemon_client, err = socket.connect(dameaon_client, 5000)
     if not daemon_client then
         error("Failed to connect to daemon: " .. err)
     end
@@ -111,6 +115,7 @@ local parser = argparse("hanger", "A CLI tool to manage all of your Minecraft Se
 local dameaon_parser = parser:command("daemon", "Start the daemon.")
 dameaon_parser:flag("--start", "Start the daemon.")
 dameaon_parser:flag("--stop", "Stop the daemon.")
+dameaon_parser:option("--connect", "Connect to the daemon."):default(host_ipv4())
 
 local help_parser = parser:command("help", "Shows a list and individual help menus.")
 help_parser:argument("CommandName", "Get a help menu from the provided command name.")
@@ -167,6 +172,18 @@ if args.daemon then
             print("Server has been shut down.")
         else
             print("Failed to shutdown server.")
+        end
+    end
+
+    if args.connect then
+        dameaon_client = args.connect
+        -- Try a ping to see if the daemon is running
+        local ping_command = {cmd = "ping"}
+        local response = send_service_instructions(ping_command)
+        if response then
+            print("Daemon is running and connected.")
+        else
+            print("Daemon is not running.")
         end
     end
 end
