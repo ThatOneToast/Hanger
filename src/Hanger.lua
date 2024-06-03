@@ -17,8 +17,49 @@ local function host_ipv4()
     return ip
 end
 
-local dameaon_client = host_ipv4()
+local function set_daemon_server(ip)
+    local cwd = lfs.currentdir()
+    local file_path = cwd .. "/storage.json"
 
+    local file = io.open(file_path, "r")
+    local prev_contents = file and file:read("*a") or ""
+    
+    if file then file:close() end
+
+    local json_contents = (#prev_contents > 0) and json.decode(prev_contents) or {}
+    if type(json_contents) ~= "table" then json_contents = {} end
+
+    json_contents.daemon_ip = ip
+
+    file = io.open(file_path, "w")
+    if not file then
+        print("Failed to open file for writing.")
+        return
+    end
+    file:write(json.encode(json_contents, { indent = true }))
+    file:close()
+    print("Daemon IP has been set.")
+end
+
+local function get_daemon_server()
+    local cwd = lfs.currentdir()
+    local file_path = cwd .. "/storage.json"
+
+    local file = io.open(file_path, "r")
+    local prev_contents = file and file:read("*a") or ""
+    if file then file:close() end
+
+    local json_contents = (#prev_contents > 0) and json.decode(prev_contents) or {}
+    if type(json_contents) ~= "table" then json_contents = {} end
+
+    if not json_contents.daemon_ip then
+        return host_ipv4()
+    else
+        return json_contents.daemon_ip
+    end
+end
+
+local dameaon_client = get_daemon_server()
 
 
 local function send_service_instructions(instructions)
@@ -176,10 +217,9 @@ if args.daemon then
     end
 
     if args.connect then
-        dameaon_client = args.connect
+        set_daemon_server(args.connect)
         -- Try a ping to see if the daemon is running
-        local ping_command = {cmd = "ping"}
-        local response = send_service_instructions(ping_command)
+        local response = send_service_instructions({cmd = "ping"})
         if response then
             print("Daemon is running and connected.")
         else
