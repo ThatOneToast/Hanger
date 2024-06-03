@@ -1,13 +1,13 @@
 local file_manager = {}
 local server_manager = {}
 
-
 local lfs = require("lfs")
 local ltn12 = require("ltn12")
 local json = require("dkjson")
 local http = require("socket.http")
 
 local home_dir = os.getenv("HOME") or os.getenv("USERPROFILE")
+
 
 local function create_server_home(server_name)
     local hanger_dir = home_dir .. "/.Hanger"
@@ -106,6 +106,12 @@ local function take_my_soul(dir)
         file:close()
     end
 
+    create_and_accept()
+
+--[[
+
+    TODO: Send a packet asking the user to accept the EULA
+
     local choosing = true
     while choosing do
         local answer = io.read()
@@ -122,6 +128,7 @@ local function take_my_soul(dir)
             print("Invalid input. Please enter 'y' or 'n'.")
         end
     end
+    ]]
 end
 
 local function create_server_properties(dir, server_ip, server_port, rcon_port, rcon_password, broadcast_rcon_to_ops)
@@ -296,33 +303,18 @@ function server_manager.start_server(server_name, min_ram, max_ram)
     local server_dir = home_dir .. "/.Hanger/" .. server_name
     local jar_file = server_dir .. "/paper.jar"
     local command = "cd '" .. server_dir .. "' && java -Xms" .. min_ram .. " -Xmx" .. max_ram .. " -jar " .. jar_file .. " nogui"
-    --command = command .. " > /dev/null 2>&1 &" -- run command in the background.
+    command = command .. " > /dev/null 2>&1 &" -- run command in the background.
 
     os.execute(command)
+    print("Started server " .. server_name)
 end
 
-function server_manager.stop_server(server_data, send_service_instructions)
+function server_manager.stop_server(server_data, send_rcon_command_packet)
 
-    local close_tcp = {cmd = "close_connection", host = server_data.ip, port = server_data.rcon_port}
-    local server_stop = {
-        cmd = "rcon_command", 
-        host = server_data.ip, 
-        port = server_data.rcon_port, 
-        password = server_data.rcon_password, 
-        command = "stop"
-    }
-
-    local success = send_service_instructions(server_stop)
+    local success = send_rcon_command_packet(server_data.ip, server_data.rcon_port, server_data.rcon_password, "stop")
 
     if success then
-        success = send_service_instructions(close_tcp)
-        if not success then
-            error("Failed to stop server.")
-        else
-            print("Server has been stopped.")
-        end
-    else
-        error("Failed to stop server.")
+        print("Stopped server " .. server_data.name)
     end
 
 end

@@ -1,7 +1,15 @@
+package.path = package.path .. ";./?.lua"
 
 local socket = require("socket")
 local serpent = require("serpent")
 local rcon = {}
+
+local minecraft_utils = require("minecraft")
+local file_manager = minecraft_utils.file_manager
+local minecraft = minecraft_utils.minecraft
+
+local lfs = require("lfs")
+local json = require("dkjson")
 
 local open_connections = {}
 local running = true
@@ -79,6 +87,70 @@ function rcon.send_command_packet(host, port, password, command)
     return true
 end
 
+local function remove_from_storage(server_name)
+    local cwd = lfs.currentdir()
+    local file_path = cwd .. "/storage.json"
+
+    local file = io.open(file_path, "r")
+    local prev_contents = file and file:read("*a") or ""
+    if file then file:close() end
+
+    local json_contents = (#prev_contents > 0) and json.decode(prev_contents) or {}
+    if type(json_contents) ~= "table" then json_contents = {} end
+
+    json_contents[server_name] = nil
+
+    file = io.open(file_path, "w")
+    if not file then
+        print("Failed to open file for writing.")
+        return
+    end
+    file:write(json.encode(json_contents, { indent = true }))
+    file:close()
+    print("Server has been removed from storage.")
+end
+
+local function add_to_server_storage(server)
+    local cwd = lfs.currentdir()
+    local file_path = cwd .. "/storage.json"
+
+    local file = io.open(file_path, "r")
+    local prev_contents = file and file:read("*a") or ""
+    if file then file:close() end
+
+    local json_contents = (#prev_contents > 0) and json.decode(prev_contents) or {}
+    if type(json_contents) ~= "table" then json_contents = {} end
+
+    json_contents[server.name] = {
+        ip = server.ip,
+        rcon_port = server.rcon_port,
+        rcon_password = server.rcon_password
+    }
+
+    file = io.open(file_path, "w")
+    if not file then
+        print("Failed to open file for writing.")
+        return
+    end
+    file:write(json.encode(json_contents, { indent = true }))
+    file:close()
+    print("Server has been added to storage.")
+end
+
+local function get_server_from_storage(server_name)
+    local cwd = lfs.currentdir()
+    local file_path = cwd .. "/storage.json"
+
+    local file = io.open(file_path, "r")
+    local prev_contents = file and file:read("*a") or ""
+    if file then file:close() end
+
+    local json_contents = (#prev_contents > 0) and json.decode(prev_contents) or {}
+    if type(json_contents) ~= "table" then json_contents = {} end
+
+    return json_contents[server_name]
+end
+
 local function new_connection(host, port)
     local tcp = assert(socket.tcp())
     local status, err = tcp:connect(host, port)
@@ -142,40 +214,123 @@ local function handle_incomming_packet(packet)
     end
 
 
-    local cmd = data.cmd
-    local host = data.host
-    local port = data.port
-    local payload = data.payload
+    local action = data.Action
+    local payload = data.Payload
 
-    -- Rcon Properties
-    local password = data.password
-    local command = data.command
 
-    if cmd == "new_connection" then
-        return new_connection(host, port)
+    if action == "new_mc_server" then
 
-    elseif cmd == "send" then
-        return send_packet(host, port, payload)
+        file_manager.new_server(
+            payload.ServerName,
+            payload.Version,
+            payload.ServerIP,
+            payload.Port,
+            payload.RconPort,
+            payload.RconPassword,
+            payload.RconBroadcast
+        )
 
-    elseif cmd == "ping" then
-        return "Pong!"
+        local save_data = {
+            name = payload.ServerName,
+            ip = payload.ServerIP,
+            rcon_port = payload.RconPort,
+            rcon_password = payload.RconPassword,
+        }
 
-    elseif cmd == "close_connection" then
-        return shutdown_connection(host, port)
+        add_to_server_storage(save_data)
 
-    elseif cmd == "shutdown" then
-        for key, tcp in pairs(open_connections) do
-            tcp:close()
-            open_connections[key] = nil
+        return "Server has been added to storage."
+
+    elseif action == "delete_mc_server" then
+        if not payload.name then
+            return "No name provided in the payload."
         end
-        running = false
-        return "Server shutting down. All connections closed."
 
-    elseif cmd == "rcon_command" then
-        return rcon.send_command_packet(host, port, password, command)
+        local server_name = payload.name
+        local server = get_server_from_storage(server_name)
 
+        if not server then
+            return "Server not found in storage."
+        end
+
+        file_manager.delete_server(server_name)
+        remove_from_storage(server_name)
+        
+
+    elseif action == "start_mc_server" then
+        if not payload.name then
+            return "No name provided in the payload."
+        end
+
+        local server_name = payload.name
+        local server = get_server_from_storage(server_name)
+
+        if not server then
+            return "Server not found in storage."
+        end
+
+        local min_ram = payload.min_ram or "1GB"
+        local max_ram = payload.max_ram or "1GB"
+
+        minecraft.start_server(server_name, min_ram, max_ram)
+
+    elseif action == "stop_mc_server" then
+        if not payload.name then
+            return "No name provided in the payload."
+        end
+
+        local server_name = payload.name
+        local server = get_server_from_storage(server_name)
+
+        if not server then
+            return "Server not found in storage."
+        end
+
+        local server_data = {
+            ip = server.ip,
+            rcon_port = server.rcon_port,
+            rcon_password = server.rcon_password
+        }
+
+        minecraft.stop_server(server_data, rcon.send_command_packet)
+
+
+    elseif action == "mc_command" then
+        if not payload then
+            return "No RCON information provided."
+        end
+
+        local server = get_server_from_storage(payload.name)
+
+        if not server then
+            return "Server not found in storage."
+        end
+
+        return rcon.send_command_packet(server.ip, server.rcon_port, server.rcon_password, payload.command)
+
+    elseif action == "mc_status" then
+        if not payload then
+            return "No RCON information provided."
+        end
+
+        local server = get_server_from_storage(payload.name)
+
+        if not server then
+            return "Server not found in storage."
+        end
+
+        local success = rcon.send_command_packet(server.ip, server.rcon_port, server.rcon_password, "say ping")
+
+        if success then
+            return "Server is online."
+        else
+            return "Server is offline."
+        end
+
+        
+    
     else
-        return "Unknown command: " .. cmd
+        return "Unknown command: " .. action
     end
 
 end
