@@ -8,7 +8,6 @@ local http = require("socket.http")
 
 local home_dir = os.getenv("HOME") or os.getenv("USERPROFILE")
 
-
 local function create_server_home(server_name)
     local hanger_dir = home_dir .. "/.Hanger"
     local server_dir = hanger_dir .. "/" .. server_name

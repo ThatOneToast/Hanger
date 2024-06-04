@@ -14,6 +14,7 @@ local json = require("dkjson")
 local open_connections = {}
 local running = true
 
+local home_dir = os.getenv("HOME") or os.getenv("USERPROFILE")
 
 --- Sends an RCON command to a server and handles the connection and authentication.
 -- @param host The IP address or hostname of the RCON server.
@@ -217,8 +218,11 @@ local function handle_incomming_packet(packet)
     local action = data.Action
     local payload = data.Payload
 
+    if action == "shutdown" then
+        running = false
+        return "Server has been shut down."
 
-    if action == "new_mc_server" then
+    elseif action == "new_mc_server" then
 
         file_manager.new_server(
             payload.ServerName,
@@ -329,6 +333,49 @@ local function handle_incomming_packet(packet)
 
         
     
+    elseif action == "mc_add_plugin" then
+        if not payload then 
+            return "There is no information provided to adding a plugin."
+        end
+
+        local server = get_server_from_storage(payload.server)
+
+        if not server then
+            return "This server does not exist."
+        end
+
+        -- Get the servers plugins folder
+        local plugins_dir = home_dir .. "/.Hanger/" .. payload.server .. "/plugins"
+        if not lfs.attributes(plugins_dir) then
+            return "This server does not have any plugins."
+        end
+
+        local plugin_dir = plugins_dir .. "/" .. payload.file_name
+        if lfs.attributes(plugin_dir) then
+            return "This plugin already exists."
+        end
+
+        local file = io.open(plugin_dir, "wb")
+        if not file then
+            return "Failed to create plugin file."
+        end
+        file:write(payload.file_conent)
+        file:close()
+        
+        
+    elseif action == "mc_remove_plugin" then
+        if not payload then
+            return "There is no information provided to removing a plugin."
+        end    
+
+        local server = get_server_from_storage(payload.name)
+
+        if not server then
+            return "This server does not exist."
+        end
+
+        minecraft.remove_plugin(payload.name, payload.plugin)
+
     else
         return "Unknown command: " .. action
     end

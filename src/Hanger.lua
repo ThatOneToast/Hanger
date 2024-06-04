@@ -86,7 +86,15 @@ local function send_service_instructions(instructions)
     return response
 end
 
-
+local function read_file(file_path)
+    local file = io.open(file_path, "rb")
+    if not file then
+        return nil, "Failed to open file"
+    end
+    local conent = file:read("*all")
+    file:close()
+    return conent
+end
 
 local parser = argparse("hanger", "A CLI tool to manage all of your Minecraft Servers")
 
@@ -105,7 +113,7 @@ create_parser:argument("ServerIP", "The server IP to create.")
 create_parser:argument("ServerPort", "The server port to create.")
 create_parser:argument("RconPort", "The server rcon port to create.")
 create_parser:argument("RconPassword", "The server rcon password to create.")
-create_parser:option("--rcon-broadcast", "Broadcast commands to oped players."):default(true)
+create_parser:option("--rcon-broadcast", "Broadcast commands to oped players."):default(false)
 
 local delete_parser = parser:command("delete", "Delete a server.")
 delete_parser:argument("ServerName", "The server name to delete.")
@@ -116,6 +124,8 @@ manager_parser:argument("ServerName", "Name of the server to manage.")
 manager_parser:flag("--start", "Start the server.")
 manager_parser:flag("--stop", "Stop the server.")
 manager_parser:flag("--status", "Get the status of the server.")
+manager_parser:option("--add-plugin", "Add a plugin to the server.")
+manager_parser:option("--remove-plugin", "Removes a plugin from the selected server.")
 
 manager_parser:option("--custom", "send your own command to the server.")
 
@@ -132,7 +142,7 @@ if args.daemon then
     end
 
     if args.stop then
-        local response = send_service_instructions({cmd = "shutdown"})
+        local response = send_service_instructions({Action = "shutdown"})
         if response then
             print("Server has been shut down.")
         else
@@ -223,6 +233,32 @@ if args.manage then
             Action = "mc_status",
             Payload = {
                 name = args.ServerName
+            }
+        }
+
+        send_service_instructions(instructions)
+    end
+
+    if args.add_plugin then
+        local file_path = args.add_plugin
+        local instructions = {
+            Action = "mc_add_plugin",
+            Payload = {
+                server = args.ServerName,
+                file_name = file_path:match("([^/\\]+)$"),
+                file_conent = read_file(file_path)
+            }
+        }
+
+        send_service_instructions(instructions)
+    end
+
+    if args.remove_plugin then
+        local instructions = {
+            Action = "mc_remove_plugin",
+            Payload = {
+                name = args.ServerName,
+                plugin = args.remove_plugin
             }
         }
 
