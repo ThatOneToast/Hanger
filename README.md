@@ -5,10 +5,10 @@ It simplifies server management allowing for quick access to commands and easy m
 
 ## Features
 
- -**Standard Server Management**: Create, start, stop, and manage multiple servers with just a few commands.
- -**Plugin Management**: Add and remove plugins from your server's plugins folder on the fly.
- -**Status Checking**: Get the status of your server and check if it's online or offline.
- **MC Commands**: Send any minecraft command to your server.
+ -**Standard Server Management**: Create, start, stop, and manage multiple servers with just a few commands. <br>
+ -**Plugin Management**: Add and remove plugins from your server's plugins folder on the fly.<br>
+ -**Status Checking**: Get the status of your server and check if it's online or offline.<br>
+ **MC Commands**: Send any minecraft command to your server.<br>
 
 ## Commands
 
