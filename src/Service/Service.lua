@@ -1,10 +1,10 @@
-package.path = package.path .. ";./?.lua"
+
 
 local socket = require("socket")
 local serpent = require("serpent")
 local rcon = {}
 
-local minecraft_utils = require("minecraft")
+local minecraft_utils = require("Service.Minecraft")
 local file_manager = minecraft_utils.file_manager
 local minecraft = minecraft_utils.minecraft
 
@@ -218,6 +218,10 @@ local function handle_incomming_packet(packet)
     local action = data.Action
     local payload = data.Payload
 
+    if action == "ping" then
+        return "pong"
+    end
+
     if action == "shutdown" then
         running = false
         return "Server has been shut down."
@@ -393,7 +397,7 @@ end
 local service = {}
 
 function service.Start_Service()
-    local server = assert(socket.bind(host_ipv4(), 5000))
+    local server = assert(socket.bind(host_ipv4(), 5000))  -- Bind to the localhost IPv4 address and port 5000
     local ip, port = server:getsockname()
     print("Server listening on " .. ip .. ":" .. port)
 

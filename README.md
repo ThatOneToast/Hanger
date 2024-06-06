@@ -12,6 +12,9 @@ It simplifies server management allowing for quick access to commands and easy m
 
 ## Commands
 
+- `info`:
+  - `--CommandName <command-name>`: The name of the command to get information about.
+
 - `daemon`:
   - `--start`: Starts the daemon service.
   - `--stop`: Stops the daemon service.
@@ -30,9 +33,21 @@ It simplifies server management allowing for quick access to commands and easy m
 
 ## Current Limitations
 
-- **Single Connection**: Currently, the CLI supports managing only one connection to a server at a time. Efforts are underway to enable support for managing multiple servers concurrently.
+- **Single Connection**: Currently, the CLI supports managing only one connection to a node at a time. Efforts are underway to enable support for managing multiple nodes concurrently.
 
 
+## Installing
+
+- Clone the repository
+- Install lua 5.3 or higher ["Download Here"](https://www.lua.org/download.html)
+- Install luarocks ["Download Here"](https://luarocks.org/releases/)
+- Install the required dependencies in the `src/requirements.txt` file with luarocks `luarocks install <package-name>`
+
+## Running
+
+- All commands can be ran by executing the Hanger.lua file. For example, to start the daemon service, run `lua Hanger.lua daemon --start`.
+
+- If you create a bash script executing the cli, the storage file will be created in the same directory as the script.
 
 ## License
 

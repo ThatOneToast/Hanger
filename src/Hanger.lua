@@ -1,11 +1,10 @@
-package.path = package.path .. ';' .. debug.getinfo(1).source:match("@?(.*/)") .. '?.lua'
 
 local argparse = require("argparse")
 local socket = require("socket")
 local serpent = require("serpent")
 local lfs = require("lfs")
 local json = require("dkjson")
-local service = require("service")
+local service = require("Service.Service")
 
 
 
@@ -47,22 +46,25 @@ local function get_daemon_server()
 
     local file = io.open(file_path, "r")
     local prev_contents = file and file:read("*a") or ""
+
     if file then file:close() end
 
     local json_contents = (#prev_contents > 0) and json.decode(prev_contents) or {}
-    if type(json_contents) ~= "table" then json_contents = {} end
+    if type(json_contents) ~= "table" then json_contents = {} end   
 
     if not json_contents.daemon_ip then
         return host_ipv4()
     else
         return json_contents.daemon_ip
     end
+
 end
 
 local dameaon_client = get_daemon_server()
 
 
 local function send_service_instructions(instructions)
+    print(dameaon_client)
     local daemon_client, err = socket.connect(dameaon_client, 5000)
     if not daemon_client then
         error("Failed to connect to daemon: " .. err)
@@ -103,7 +105,7 @@ dameaon_parser:flag("--start", "Start the daemon.")
 dameaon_parser:flag("--stop", "Stop the daemon.")
 dameaon_parser:option("--connect", "Connect to the daemon."):default(host_ipv4())
 
-local help_parser = parser:command("help", "Shows a list and individual help menus.")
+local help_parser = parser:command("info", "Shows a list and individual help menus.")
 help_parser:argument("CommandName", "Get a help menu from the provided command name.")
 
 local create_parser = parser:command("create", "Create local or remote servers.")
@@ -135,6 +137,31 @@ manager_parser:option("--max-ram", "The maximum amount of RAM the server will us
 
 local args = parser:parse()
 
+if args.info then
+    if args.CommandName == "daemon" then
+        print("Usage: hanger daemon --start " .. " | " .. " Starts the service to run operations.")
+        print("Usage: hanger daemon --stop " .. " | " .. " Stops the service.")
+        print("Usage: hanger daemon --connect <ip> " .. " | " .. " Connects to the service running operations.")
+    
+
+    elseif args.CommandName == "create" then
+        print("Usage: hanger create <ServerName> <Version> <ServerIP> <ServerPort> <RconPort> <RconPassword> [--rcon-broadcast]")
+    
+
+    elseif args.CommandName == "delete" then
+        print("Usage: hanger delete <ServerName>")
+    
+
+    elseif args.CommandName == "manage" then
+        print("Required Arguments: <ServerName>")
+        print("Optional Tags: --start | --stop | --status")
+        print("Optional Tags with Arguments: --add-plugin <path-to-plugin> | --remove-plugin <plugin-name> | --custom <minecraft-command>")
+        print("Optional Tags with Arguments ( Must have --start ): --min-ram <min-ram> | --max-ram <max-ram>")
+    end
+
+
+
+end
 
 if args.daemon then
     if args.start then

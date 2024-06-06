@@ -1,0 +1,5 @@
+luarocks
+luasocket
+serpent
+luafilesystem
+dkjson

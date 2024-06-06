@@ -1,0 +1,8 @@
+#!/bin/bash
+# This script executes the hanger.lua script using Lua and passes along any arguments
+
+# The install script will move this into the ~/bin directory and make it executable anywhere
+
+
+# Run the Lua script with all the passed arguments
+lua "~/Hanger/src/Hanger.lua" "$@"
