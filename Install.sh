@@ -14,7 +14,7 @@ if [ "$(uname)" == "Darwin" ]; then
   echo 'export PATH=$PATH:~/Hanger/src' >> ~/.bashrc
   source ~/.bashrc
 
-  echo 'export PATH=$PATH:~/Hanger/src' >> ~/.zshrc
+  echo 'export PATH=$PATH:~/Hanger/src/Hanger' >> ~/.zshrc
   source ~/.zshrc
 fi    
 
@@ -29,8 +29,3 @@ fi
 
 # Install dependencies
 lua InstallDepends.lua
-
-
-
-# Ensure ~/bin directory exists
-mkdir -p "$HOME/bin" || exit 1

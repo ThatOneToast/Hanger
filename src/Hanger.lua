@@ -1,12 +1,14 @@
+local lfs = require("lfs")
+
+local current_dir = lfs.currentdir()
+package.path = package.path .. ";" .. current_dir .. "?.lua" .. current_dir .. "Service/?.lua"
+
 
 local argparse = require("argparse")
 local socket = require("socket")
 local serpent = require("serpent")
-local lfs = require("lfs")
 local json = require("dkjson")
 local service = require("Service.Service")
-
-
 
 local function host_ipv4()
     local udp = socket.udp()
